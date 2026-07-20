@@ -19,7 +19,7 @@
   --bg:         #E6E9F4;   /* neumorphic base */
   --bg-2:       #EBEEf8;   /* raised surface */
   --bg-3:       #F2F4FB;   /* highest surface */
-  --bg-glass:   rgba(230, 233, 244, 0.55);
+  --bg-glass:   rgba(230, 233, 244, 0.95);
 
   /* Text */
   --text-1:     #2B2E50;
@@ -52,7 +52,7 @@
   --shadow-accent-in: inset 3px 3px 8px rgba(120,121,241,0.28), inset -3px -3px 8px rgba(255,255,255,0.8);
 
   /* Glass */
-  --glass-bg:     rgba(240, 242, 252, 0.60);
+  --glass-bg:     rgba(240, 242, 252, 0.95);
   --glass-border: rgba(255, 255, 255, 0.80);
   --glass-shadow: 0 8px 32px rgba(120, 121, 241, 0.08), 0 2px 8px rgba(0,0,0,0.04);
 
@@ -90,7 +90,7 @@
   --bg:         #191C2E;
   --bg-2:       #1E2138;
   --bg-3:       #242742;
-  --bg-glass:   rgba(25, 28, 46, 0.60);
+  --bg-glass:   rgba(25, 28, 46, 0.95);
 
   --text-1:     #E0E2F0;
   --text-2:     #8488A8;
@@ -117,7 +117,7 @@
   --shadow-accent:  5px 5px 12px rgba(139,140,240,0.35), -3px -3px 8px rgba(34,37,64,0.80);
   --shadow-accent-in: inset 3px 3px 8px rgba(0,0,0,0.50), inset -3px -3px 8px rgba(139,140,240,0.18);
 
-  --glass-bg:     rgba(25, 28, 46, 0.65);
+  --glass-bg:     rgba(25, 28, 46, 0.95);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0,0,0,0.20);
 
@@ -142,6 +142,20 @@
   --md-border:   #2A2D48;
   --md-th-bg:    #1E2138;
   --md-td-even:  #1B1E30;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BACKDROP FILTER FALLBACK
+════════════════════════════════════════════════════════════ */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+  :root {
+    --bg-glass: rgba(230, 233, 244, 0.55);
+    --glass-bg: rgba(240, 242, 252, 0.60);
+  }
+  .dark {
+    --bg-glass: rgba(25, 28, 46, 0.60);
+    --glass-bg: rgba(25, 28, 46, 0.65);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
