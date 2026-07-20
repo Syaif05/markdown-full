@@ -1,15 +1,27 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
-import rehypeSanitize from "rehype-sanitize";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import rehypeKatex from "rehype-katex";
 import rehypeStringify from "rehype-stringify";
 
 const processor = unified()
   .use(remarkParse)
   .use(remarkGfm)
+  .use(remarkMath)
   .use(remarkRehype, { allowDangerousHtml: false })
-  .use(rehypeSanitize)
+  .use(rehypeSanitize, {
+    ...defaultSchema,
+    attributes: {
+      ...defaultSchema.attributes,
+      div: [...(defaultSchema.attributes?.div || []), "className"],
+      span: [...(defaultSchema.attributes?.span || []), "className", "style"],
+      code: ["className"]
+    }
+  })
+  .use(rehypeKatex)
   .use(rehypeStringify);
 
 /**
@@ -29,8 +41,8 @@ A **clean, modern** Markdown editor built for speed and simplicity.
 
 - [x] Live split-view preview
 - [x] GFM support (tables, strikethrough, task lists)
-- [ ] Mermaid diagrams *(coming in Phase 3)*
-- [ ] Math with KaTeX *(coming in Phase 3)*
+- [x] Mermaid diagrams
+- [x] Math with KaTeX
 
 ## Quick Reference
 
@@ -41,20 +53,25 @@ A **clean, modern** Markdown editor built for speed and simplicity.
 | \`~~strike~~\` | ~~strike~~     |
 | \`\`code\`\`   | \`code\`         |
 
-## Code Example
+## Diagram Example (Mermaid)
 
-\`\`\`javascript
-// GlassMark — fully client-side
-const editor = {
-  mode: "split-view",
-  parser: "remark + rehype",
-  ready: true,
-};
+\`\`\`mermaid
+graph TD;
+    A[Markdown] --> B(Parser);
+    B --> C{Safe HTML?};
+    C -->|Yes| D[Live Preview];
+    C -->|No| E[Sanitize];
+    E --> D;
 \`\`\`
 
+## Math Example (KaTeX)
+
+Einstein's mass-energy equivalence is $E = mc^2$.
+
+The quadratic formula is:
+
+$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+
 > **Tip:** You can drag the center divider to resize the panels.
-
----
-
-*Start typing in the left panel to see your Markdown rendered live on the right.*
 `;
+

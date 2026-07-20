@@ -112,6 +112,25 @@ export default function Home() {
 
   useEffect(() => { renderMarkdown(DEFAULT_MARKDOWN).then(setHtml); }, []);
 
+  // ── Mermaid renderer ────────────────────────────────────────────────
+  useEffect(() => {
+    if (html && mode === "split") {
+      const renderMermaid = async () => {
+        try {
+          const mermaid = (await import("mermaid")).default;
+          mermaid.initialize({ startOnLoad: false, theme: isDark ? "dark" : "default" });
+          await mermaid.run({
+            querySelector: '.md-preview code.language-mermaid',
+            suppressErrors: true,
+          });
+        } catch (e) {
+          // Ignore incomplete diagram errors while typing
+        }
+      };
+      renderMermaid();
+    }
+  }, [html, mode, isDark]);
+
   // ── Toolbar: unified format helper ──────────────────────────────────
   // In split mode: inserts markdown syntax
   // In wysiwyg mode: calls Tiptap commands
