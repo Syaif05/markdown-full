@@ -14,6 +14,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { renderMarkdown, DEFAULT_MARKDOWN } from "@/lib/markdownRenderer";
 import type { WysiwygRef } from "@/components/WysiwygEditor";
 import { exportToPng, exportToPdf, exportToHtml } from "@/lib/exportEngine";
+import TableGenerator from "@/components/TableGenerator";
+import ReadmeGenerator from "@/components/ReadmeGenerator";
 
 // ── Dynamic imports (client-only) ─────────────────────────────────────────
 const CodeMirrorEditor = dynamic(() => import("@/components/CodeMirrorEditor"), {
@@ -94,6 +96,8 @@ export default function Home() {
   const [prevMode, setPrevMode]         = useState<"split" | "wysiwyg">("split");
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [showTableGen, setShowTableGen] = useState(false);
+  const [showReadmeGen, setShowReadmeGen] = useState(false);
   const [leftWidth, setLeftWidth]       = useState(50);
   const [copied, setCopied]             = useState<"" | "md" | "html">("");
   const [wysiwygKey, setWysiwygKey]     = useState(0); // for forced remount on import
@@ -162,6 +166,15 @@ export default function Home() {
     else splitFn();
   }, [mode]);
 
+  const handleInsert = (content: string) => {
+    if (mode === "wysiwyg") {
+      setMarkdown(md => md + "\n\n" + content);
+      setWysiwygKey(k => k + 1); // Force remount to render new syntax correctly
+    } else {
+      setMarkdown(md => md + "\n\n" + content);
+    }
+  };
+
   // ── Toolbar action map ──────────────────────────────────────────────
   const fmt = {
     bold:    () => cmd(() => cmWrap("**"),                  () => wysiwygRef.current?.chain().toggleBold().run()),
@@ -185,7 +198,7 @@ export default function Home() {
       }
     ),
     image:   () => cmInsert("![Alt](url)"),
-    table:   () => cmInsert("| Col 1 | Col 2 |\n|-------|-------|\n| A     | B     |"),
+    table:   () => setShowTableGen(true),
   };
 
   // ── Draggable divider ───────────────────────────────────────────────
@@ -318,6 +331,18 @@ export default function Home() {
 
         {/* Right controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => setShowReadmeGen(true)}
+            title="Open README Generator"
+            className="h-9 px-4 text-xs font-semibold rounded-xl theme-transition transition-all duration-150
+              shadow-[var(--shadow-out-sm)] bg-[var(--bg-2)]
+              hover:shadow-[var(--shadow-out)] hover:bg-[var(--bg-3)]
+              active:scale-[0.96] active:shadow-[var(--shadow-in-sm)] hidden sm:block"
+            style={{ color: "var(--text-2)" }}
+          >
+            README Builder
+          </button>
+
           <button
             onClick={importFile}
             title="Import .md file"
@@ -597,6 +622,14 @@ export default function Home() {
           </span>
         </div>
       </footer>
+
+      {showTableGen && (
+        <TableGenerator onInsert={handleInsert} onClose={() => setShowTableGen(false)} />
+      )}
+      
+      {showReadmeGen && (
+        <ReadmeGenerator onInsert={handleInsert} onClose={() => setShowReadmeGen(false)} />
+      )}
     </main>
   );
 }
