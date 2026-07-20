@@ -128,6 +128,15 @@ export default function Home() {
   const [copied, setCopied]             = useState<"" | "md" | "html">("");
   const [wysiwygKey, setWysiwygKey]     = useState(0); // for forced remount on import
   const [cheatSearch, setCheatSearch]   = useState("");
+  const [isMobile, setIsMobile]         = useState(false);
+  const [mobileTab, setMobileTab]       = useState<"source" | "preview">("source");
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const stats = getStats(markdown);
 
@@ -293,6 +302,7 @@ export default function Home() {
   }: { label: string; title: string; onClick: () => void; wide?: boolean }) => (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       className={[
         "h-7 rounded-lg text-[11.5px] font-mono font-semibold select-none",
@@ -506,40 +516,77 @@ export default function Home() {
         <div ref={containerRef} className="flex-1 flex overflow-hidden">
 
           {mode === "split" ? (
-            /* ── Split View ─────────────────────────────────────────── */
-            <div className={`flex-1 flex overflow-hidden ${getSlideClass()}`}>
-              {/* Left: CodeMirror source */}
-              <div
-                className="flex flex-col overflow-hidden border-r border-[var(--border-subtle)]"
-                style={{ width: `${leftWidth}%` }}
-              >
-                <PaneLabel text="Markdown Source" badge="Editor" />
-                <div className="flex-1 overflow-hidden">
-                  <CodeMirrorEditor
-                    value={markdown}
-                    onChange={setMarkdown}
-                    isDark={isDark}
-                  />
+            isMobile ? (
+              /* ── Split View Mobile (Tabs) ───────────────────────────── */
+              <div className={`flex-1 flex flex-col overflow-hidden ${getSlideClass()}`}>
+                <div className="flex border-b border-[var(--border-subtle)]" style={{ background: "var(--ed-gutter-bg)" }}>
+                  <button 
+                    className="flex-1 py-3 text-xs font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    style={{ 
+                      color: mobileTab === "source" ? "var(--accent)" : "var(--text-3)",
+                      borderBottom: mobileTab === "source" ? "2px solid var(--accent)" : "2px solid transparent"
+                    }}
+                    onClick={() => setMobileTab("source")}
+                  >
+                    Markdown Source
+                  </button>
+                  <button 
+                    className="flex-1 py-3 text-xs font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    style={{ 
+                      color: mobileTab === "preview" ? "var(--accent)" : "var(--text-3)",
+                      borderBottom: mobileTab === "preview" ? "2px solid var(--accent)" : "2px solid transparent"
+                    }}
+                    onClick={() => setMobileTab("preview")}
+                  >
+                    Live Preview
+                  </button>
+                </div>
+                {mobileTab === "source" ? (
+                  <div className="flex-1 overflow-hidden">
+                    <CodeMirrorEditor value={markdown} onChange={setMarkdown} isDark={isDark} />
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-auto px-4 py-6" style={{ background: "var(--bg-2)" }}>
+                    <div className="md-preview max-w-2xl mx-auto" dangerouslySetInnerHTML={{ __html: html }} />
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* ── Split View Desktop ─────────────────────────────────────────── */
+              <div className={`flex-1 flex overflow-hidden ${getSlideClass()}`}>
+                {/* Left: CodeMirror source */}
+                <div
+                  className="flex flex-col overflow-hidden border-r border-[var(--border-subtle)]"
+                  style={{ width: `${leftWidth}%` }}
+                >
+                  <PaneLabel text="Markdown Source" badge="Editor" />
+                  <div className="flex-1 overflow-hidden">
+                    <CodeMirrorEditor
+                      value={markdown}
+                      onChange={setMarkdown}
+                      isDark={isDark}
+                    />
+                  </div>
+                </div>
+
+                {/* Draggable divider */}
+                <div className="resize-divider" onMouseDown={onDividerDown} />
+
+                {/* Right: Live preview */}
+                <div
+                  className="flex flex-col overflow-hidden"
+                  style={{ width: `${100 - leftWidth}%`, background: "var(--bg-2)" }}
+                >
+                  <PaneLabel text="Live Preview" badge="GFM ✓" />
+                  <div className="flex-1 overflow-auto px-8 py-6">
+                    <div
+                      className="md-preview max-w-2xl mx-auto"
+                      dangerouslySetInnerHTML={{ __html: html }}
+                    />
+                  </div>
                 </div>
               </div>
-
-              {/* Draggable divider */}
-              <div className="resize-divider" onMouseDown={onDividerDown} />
-
-              {/* Right: Live preview */}
-              <div
-                className="flex flex-col overflow-hidden"
-                style={{ width: `${100 - leftWidth}%`, background: "var(--bg-2)" }}
-              >
-                <PaneLabel text="Live Preview" badge="GFM ✓" />
-                <div className="flex-1 overflow-auto px-8 py-6">
-                  <div
-                    className="md-preview max-w-2xl mx-auto"
-                    dangerouslySetInnerHTML={{ __html: html }}
-                  />
-                </div>
-              </div>
-            </div>
+            )
           ) : (
             /* ── WYSIWYG Mode ───────────────────────────────────────── */
             <div className={`flex-1 flex flex-col overflow-hidden ${getSlideClass()}`}>

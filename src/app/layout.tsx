@@ -43,6 +43,11 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full antialiased font-sans" suppressHydrationWarning>
+        <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+          <div className="ambient-orb orb-1"></div>
+          <div className="ambient-orb orb-2"></div>
+          <div className="ambient-orb orb-3"></div>
+        </div>
         {children}
       </body>
     </html>
