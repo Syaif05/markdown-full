@@ -81,6 +81,32 @@ function getStats(md: string) {
   return { words, chars: md.length, readMin: Math.max(1, Math.round(words / 200)) };
 }
 
+// ── Cheatsheet Data ─────────────────────────────────────────────────────────
+const CHEATSHEET = [
+  { category: "Basic", name: "Heading 1",     syntax: "# Heading 1",                        color: "var(--accent)" },
+  { category: "Basic", name: "Heading 2",     syntax: "## Heading 2",                       color: "var(--accent)" },
+  { category: "Basic", name: "Heading 3",     syntax: "### Heading 3",                      color: "var(--accent)" },
+  { category: "Basic", name: "Bold",          syntax: "**bold text**",                      color: "var(--accent)" },
+  { category: "Basic", name: "Italic",        syntax: "*italic text*",                      color: "var(--accent-lav)" },
+  { category: "Basic", name: "Blockquote",    syntax: "> Blockquote",                       color: "var(--accent-peach)" },
+  { category: "Basic", name: "Bullet List",   syntax: "- Item 1\n- Item 2",                 color: "var(--accent)" },
+  { category: "Basic", name: "Ordered List",  syntax: "1. First\n2. Second",                color: "var(--accent)" },
+  { category: "Basic", name: "Horiz. Rule",   syntax: "---",                                color: "var(--text-3)" },
+  { category: "Extended", name: "Strikethrough", syntax: "~~strikethrough~~",               color: "var(--text-3)" },
+  { category: "Extended", name: "Task List",     syntax: "- [ ] Todo\n- [x] Done",          color: "var(--accent-teal)" },
+  { category: "Extended", name: "Table",         syntax: "| Col 1 | Col 2 |\n|---|---|\n| A | B |", color: "var(--accent)" },
+  { category: "Extended", name: "Link",          syntax: "[Link Label](https://...)",       color: "var(--accent-teal)" },
+  { category: "Extended", name: "Image",         syntax: "![Image Alt](url)",               color: "var(--accent-teal)" },
+  { category: "Code", name: "Inline Code",   syntax: "`console.log()`",                     color: "var(--accent-lav)" },
+  { category: "Code", name: "Code Block",    syntax: "```js\nfunction test() {\n  return 1;\n}\n```", color: "var(--accent-lav)" },
+  { category: "Advanced", name: "Mermaid Diagram", syntax: "```mermaid\ngraph TD;\n  A-->B;\n```", color: "var(--accent-teal)" },
+  { category: "Advanced", name: "Mermaid Sequence", syntax: "```mermaid\nsequenceDiagram\n  Alice->>Bob: Hello\n```", color: "var(--accent-teal)" },
+  { category: "Advanced", name: "Math Inline", syntax: "Einstein said $E=mc^2$", color: "var(--accent-peach)" },
+  { category: "Advanced", name: "Math Block", syntax: "$$\nx = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\n$$", color: "var(--accent-peach)" },
+  { category: "HTML", name: "Keyboard Key", syntax: "Press <kbd>Ctrl</kbd> + <kbd>C</kbd>", color: "var(--text-2)" },
+  { category: "HTML", name: "Comment", syntax: "<!-- Hidden comment -->", color: "var(--text-3)" },
+];
+
 // ════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ════════════════════════════════════════════════════════════
@@ -101,6 +127,7 @@ export default function Home() {
   const [leftWidth, setLeftWidth]       = useState(50);
   const [copied, setCopied]             = useState<"" | "md" | "html">("");
   const [wysiwygKey, setWysiwygKey]     = useState(0); // for forced remount on import
+  const [cheatSearch, setCheatSearch]   = useState("");
 
   const stats = getStats(markdown);
 
@@ -540,47 +567,48 @@ export default function Home() {
         >
           <div className="w-[272px] flex flex-col h-full overflow-hidden">
             <div
-              className="flex-shrink-0 px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between"
+              className="flex-shrink-0 px-4 py-3 border-b border-[var(--border-subtle)] flex flex-col gap-3"
             >
-              <span className="font-display font-bold text-sm" style={{ color: "var(--text-1)" }}>
-                Cheatsheet
-              </span>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-[var(--bg-3)] transition-colors text-base leading-none"
-                style={{ color: "var(--text-3)" }}
-              >
-                ×
-              </button>
+              <div className="flex items-center justify-between">
+                <span className="font-display font-bold text-sm" style={{ color: "var(--text-1)" }}>
+                  Cheatsheet
+                </span>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-[var(--bg-3)] transition-colors text-base leading-none"
+                  style={{ color: "var(--text-3)" }}
+                >
+                  ×
+                </button>
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search syntax..." 
+                value={cheatSearch}
+                onChange={e => setCheatSearch(e.target.value)}
+                className="w-full px-3 py-1.5 rounded-lg text-xs border focus:outline-none transition-colors"
+                style={{ 
+                  background: "var(--bg)", 
+                  color: "var(--text-1)", 
+                  borderColor: "var(--border-subtle)" 
+                }}
+              />
             </div>
             <div className="flex-1 overflow-auto p-3 space-y-2">
-              {[
-                { name: "Bold",          syntax: "**text**",                       color: "var(--accent)" },
-                { name: "Italic",        syntax: "*text*",                         color: "var(--accent-lav)" },
-                { name: "Strikethrough", syntax: "~~text~~",                       color: "var(--text-3)" },
-                { name: "Heading 1",     syntax: "# Title",                        color: "var(--accent)" },
-                { name: "Heading 2",     syntax: "## Title",                       color: "var(--accent)" },
-                { name: "Heading 3",     syntax: "### Title",                      color: "var(--accent)" },
-                { name: "Link",          syntax: "[Label](url)",                   color: "var(--accent-teal)" },
-                { name: "Image",         syntax: "![Alt](url)",                   color: "var(--accent-teal)" },
-                { name: "Code Inline",   syntax: "`code`",                         color: "var(--accent-lav)" },
-                { name: "Code Block",    syntax: "```js\ncode\n```",               color: "var(--accent-lav)" },
-                { name: "Blockquote",    syntax: "> quote",                        color: "var(--accent-peach)" },
-                { name: "Bullet List",   syntax: "- item",                         color: "var(--accent)" },
-                { name: "Ordered List",  syntax: "1. item",                        color: "var(--accent)" },
-                { name: "Task List",     syntax: "- [ ] task\n- [x] done",         color: "var(--accent-teal)" },
-                { name: "Table",         syntax: "| A | B |\n|---|---|\n| 1 | 2 |", color: "var(--accent)" },
-                { name: "Horiz. Rule",   syntax: "---",                            color: "var(--text-3)" },
-              ].map((item) => (
+              {CHEATSHEET.filter(item => 
+                item.name.toLowerCase().includes(cheatSearch.toLowerCase()) || 
+                item.syntax.toLowerCase().includes(cheatSearch.toLowerCase()) ||
+                item.category.toLowerCase().includes(cheatSearch.toLowerCase())
+              ).map((item) => (
                 <button
                   key={item.name}
                   onClick={() => {
                     if (mode === "wysiwyg") {
                       // In WYSIWYG, insert as raw text that gets parsed
-                      setMarkdown(md => md + "\n" + item.syntax);
+                      setMarkdown(md => md + "\n\n" + item.syntax);
                       setWysiwygKey(k => k + 1);
                     } else {
-                      setMarkdown(md => md + "\n" + item.syntax);
+                      setMarkdown(md => md + "\n\n" + item.syntax);
                     }
                   }}
                   className="w-full text-left p-3 rounded-xl theme-transition transition-all duration-150
