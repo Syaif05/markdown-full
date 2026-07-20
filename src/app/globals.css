@@ -2,25 +2,107 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1e2230;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --font-sans: var(--font-inter), sans-serif;
+  --font-display: var(--font-plus-jakarta), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-accent: #4c6fff;
+  --color-brand-accent-hover: #3b5bdb;
+  --color-brand-success: #22c55e;
+  --color-brand-ink: #1e2230;
+  --color-brand-ink-light: #4b526d;
+  --color-brand-surface: #f5f6fa;
+  --color-brand-glass: rgba(255, 255, 255, 0.55);
+  --color-brand-glass-border: rgba(255, 255, 255, 0.4);
+
+  --shadow-soft: 0 8px 32px 0 rgba(30, 34, 48, 0.06);
+  --shadow-elevated: 0 12px 40px 0 rgba(30, 34, 48, 0.12), 0 2px 4px 0 rgba(30, 34, 48, 0.04);
+  --shadow-skeuo-button: 0 4px 6px rgba(30, 34, 48, 0.08), 0 1px 3px rgba(30, 34, 48, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --shadow-skeuo-button-hover: 0 6px 12px rgba(30, 34, 48, 0.12), 0 2px 4px rgba(30, 34, 48, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-skeuo-press: inset 0 2px 4px 0 rgba(30, 34, 48, 0.08), 0 1px 1px rgba(30, 34, 48, 0.02);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom Utilities & Keyframes */
+@keyframes orb-float-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+@keyframes orb-float-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 40px) scale(1.15);
+  }
+}
+
+@keyframes orb-float-3 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  40% {
+    transform: translate(50px, 30px) scale(0.9);
+  }
+}
+
+.animate-orb-1 {
+  animation: orb-float-1 25s infinite ease-in-out;
+}
+
+.animate-orb-2 {
+  animation: orb-float-2 30s infinite ease-in-out;
+}
+
+.animate-orb-3 {
+  animation: orb-float-3 20s infinite ease-in-out;
+}
+
+/* Glassmorphism Refraction Border */
+.glass-border-refraction {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 
+    0 8px 32px 0 rgba(30, 34, 48, 0.05),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.6),
+    inset -1px -1px 0 rgba(30, 34, 48, 0.02);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(30, 34, 48, 0.02);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(30, 34, 48, 0.12);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 34, 48, 0.24);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
