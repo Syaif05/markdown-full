@@ -472,3 +472,256 @@ body {
   to   { transform: rotate(0deg)   scale(1);   opacity: 1; }
 }
 .animate-spin-in { animation: spin-in 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* ════════════════════════════════════════════════════════════
+   LIQUID GLASS TOGGLE — Animations
+════════════════════════════════════════════════════════════ */
+@keyframes glass-sweep {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateX(200%); opacity: 0; }
+}
+
+@keyframes mode-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-mode-in { animation: mode-fade-in 0.25s ease-out forwards; }
+
+/* ════════════════════════════════════════════════════════════
+   PROSEMIRROR / WYSIWYG EDITOR
+════════════════════════════════════════════════════════════ */
+
+/* ── Editor host ── */
+.wysiwyg-content {
+  min-height: 100%;
+  padding: 2.5rem 2rem 4rem;
+  max-width: 740px;
+  margin: 0 auto;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  line-height: 1.8;
+  color: var(--text-1);
+  caret-color: var(--accent);
+  transition: color 0.2s ease;
+}
+
+/* Headings */
+.wysiwyg-content h1 {
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--md-h1);
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--md-border);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.wysiwyg-content h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--md-h1);
+  margin: 2rem 0 0.7rem;
+  letter-spacing: -0.01em;
+}
+.wysiwyg-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--md-h2);
+  margin: 1.5rem 0 0.5rem;
+}
+.wysiwyg-content h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--md-h2);
+  margin: 1.25rem 0 0.4rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Body text */
+.wysiwyg-content p { margin: 0 0 0.9rem; }
+.wysiwyg-content strong { font-weight: 700; color: var(--md-h1); }
+.wysiwyg-content em     { font-style: italic; color: var(--text-2); }
+.wysiwyg-content s, .wysiwyg-content del { text-decoration: line-through; opacity: 0.55; }
+
+/* Links */
+.wysiwyg-content a, .wysiwyg-link {
+  color: var(--accent-teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--accent-teal) 40%, transparent);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.wysiwyg-content a:hover { opacity: 0.8; }
+
+/* Inline code */
+.wysiwyg-content code {
+  font-family: var(--font-mono);
+  background: var(--md-code-bg);
+  color: var(--md-code-fg);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 0.82em;
+}
+
+/* Code blocks */
+.wysiwyg-content pre, .wysiwyg-codeblock {
+  background: var(--md-pre-bg);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  margin: 0.9rem 0;
+  box-shadow: var(--shadow-out-sm);
+}
+.wysiwyg-content pre code {
+  background: transparent;
+  color: var(--md-pre-fg);
+  padding: 0;
+  font-size: 0.83rem;
+  line-height: 1.7;
+}
+
+/* Blockquote */
+.wysiwyg-content blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--md-bq-bg);
+  padding: 0.6rem 1.1rem;
+  margin: 0.9rem 0;
+  border-radius: 0 10px 10px 0;
+  color: var(--text-2);
+  font-style: italic;
+}
+
+/* Lists */
+.wysiwyg-content ul { list-style: disc; padding-left: 1.5rem; margin: 0 0 0.9rem; }
+.wysiwyg-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0 0 0.9rem; }
+.wysiwyg-content li { margin-bottom: 0.3rem; }
+
+/* Task list */
+.wysiwyg-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+.wysiwyg-content li[data-type="taskItem"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 2px 0;
+}
+.wysiwyg-content li[data-type="taskItem"] > label {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+.wysiwyg-content li[data-type="taskItem"] input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.wysiwyg-content li[data-type="taskItem"] > div { flex: 1; }
+.wysiwyg-content li[data-type="taskItem"][data-checked="true"] > div {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+/* Horizontal rule */
+.wysiwyg-content hr {
+  border: none;
+  border-top: 2px solid var(--md-border);
+  margin: 1.5rem 0;
+}
+
+/* Placeholder */
+.wysiwyg-content .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-3);
+  pointer-events: none;
+  float: left;
+  height: 0;
+  font-style: italic;
+}
+
+/* ProseMirror selection */
+.wysiwyg-content .ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Bubble menu ── */
+.bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 7px;
+  border-radius: 14px;
+  background: var(--bg-2);
+  box-shadow: var(--shadow-out), 0 4px 24px rgba(120,121,241,0.12);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: mode-fade-in 0.15s ease-out;
+}
+
+.bubble-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-subtle);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.bubble-btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 7px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  transition: all 0.1s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.bubble-btn:hover {
+  background: var(--bg-3);
+  color: var(--accent);
+  box-shadow: var(--shadow-out-xs);
+}
+
+.bubble-btn.is-active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-accent);
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODE TRANSITION (split ↔ wysiwyg)
+════════════════════════════════════════════════════════════ */
+@keyframes panel-slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes panel-slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.panel-in-left  { animation: panel-slide-in-left  0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+.panel-in-right { animation: panel-slide-in-right 0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
