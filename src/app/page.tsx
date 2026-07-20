@@ -13,6 +13,7 @@ import LiquidGlassToggle from "@/components/LiquidGlassToggle";
 import { useTheme } from "@/hooks/useTheme";
 import { renderMarkdown, DEFAULT_MARKDOWN } from "@/lib/markdownRenderer";
 import type { WysiwygRef } from "@/components/WysiwygEditor";
+import { exportToPng, exportToPdf, exportToHtml } from "@/lib/exportEngine";
 
 // ── Dynamic imports (client-only) ─────────────────────────────────────────
 const CodeMirrorEditor = dynamic(() => import("@/components/CodeMirrorEditor"), {
@@ -92,11 +93,27 @@ export default function Home() {
   const [mode, setMode]                 = useState<"split" | "wysiwyg">("split");
   const [prevMode, setPrevMode]         = useState<"split" | "wysiwyg">("split");
   const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [leftWidth, setLeftWidth]       = useState(50);
   const [copied, setCopied]             = useState<"" | "md" | "html">("");
   const [wysiwygKey, setWysiwygKey]     = useState(0); // for forced remount on import
 
   const stats = getStats(markdown);
+
+  const handleExport = async (format: "pdf" | "png" | "html") => {
+    setExportMenuOpen(false);
+    const previewEl = document.querySelector(".md-preview") as HTMLElement;
+    if (!previewEl) return;
+    
+    try {
+      if (format === "png") await exportToPng(previewEl, "glassmark.png");
+      if (format === "pdf") await exportToPdf(previewEl, "glassmark.pdf");
+      if (format === "html") exportToHtml(html, "glassmark.html");
+    } catch (e) {
+      console.error("Export failed:", e);
+      alert("Export failed. See console for details.");
+    }
+  };
 
   // ── Mode switch handler ─────────────────────────────────────────────
   const handleModeChange = useCallback((m: "split" | "wysiwyg") => {
@@ -333,7 +350,57 @@ export default function Home() {
 
           <ThemeToggle />
 
-          <Button3D variant="accent" size="sm">Export ↓</Button3D>
+          <div className="relative">
+            <div onClick={() => setExportMenuOpen(o => !o)}>
+              <Button3D variant="accent" size="sm">Export ↓</Button3D>
+            </div>
+            
+            {exportMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setExportMenuOpen(false)} 
+                />
+                <div 
+                  className="absolute right-0 top-full mt-2 w-40 rounded-xl py-1 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2"
+                  style={{ 
+                    background: "var(--glass-bg)", 
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid var(--border-subtle)",
+                    boxShadow: "var(--shadow-out)"
+                  }}
+                >
+                  <button 
+                    onClick={() => handleExport("pdf")}
+                    className="w-full text-left px-4 py-2 text-sm transition-colors font-medium"
+                    style={{ color: "var(--text-1)", background: "transparent" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-3)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    Export as PDF
+                  </button>
+                  <button 
+                    onClick={() => handleExport("png")}
+                    className="w-full text-left px-4 py-2 text-sm transition-colors font-medium"
+                    style={{ color: "var(--text-1)", background: "transparent" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-3)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    Export as PNG
+                  </button>
+                  <button 
+                    onClick={() => handleExport("html")}
+                    className="w-full text-left px-4 py-2 text-sm transition-colors font-medium"
+                    style={{ color: "var(--text-1)", background: "transparent" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-3)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    Export as HTML
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
