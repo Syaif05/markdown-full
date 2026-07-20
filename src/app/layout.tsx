@@ -7,13 +7,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   display: "swap",
 });
-
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
 });
-
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
@@ -22,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "GlassMark — All-in-One Markdown Tool",
-  description: "A premium skeuomorphic markdown editor and tool set.",
+  description: "A premium skeuomorphic markdown editor with live preview, diagrams, math, and export tools.",
 };
 
 export default function RootLayout({
@@ -33,9 +31,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full bg-white text-brand-ink font-sans flex flex-col">{children}</body>
+      {/* Inline script runs before paint — prevents dark-mode flash */}
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('glassmark-theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark');}}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="h-full antialiased font-sans" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

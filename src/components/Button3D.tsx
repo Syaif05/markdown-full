@@ -2,44 +2,56 @@ import React from "react";
 
 interface Button3DProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "accent" | "secondary" | "ghost" | "danger";
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
 
 export default function Button3D({
   children,
-  variant = "primary",
+  variant = "accent",
   size = "md",
   className = "",
   ...props
 }: Button3DProps) {
-  const base =
-    "inline-flex items-center justify-center font-display font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
+  const base = [
+    "inline-flex items-center justify-center gap-1.5",
+    "font-display font-semibold rounded-xl",
+    "transition-all duration-150 cursor-pointer select-none",
+    "outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/60 focus-visible:ring-offset-2",
+    "focus-visible:ring-offset-[var(--bg-2)]",
+    "disabled:opacity-40 disabled:cursor-not-allowed",
+  ].join(" ");
 
   const sizes: Record<string, string> = {
-    xs: "px-3 py-1.5 text-[11px] gap-1",
-    sm: "px-4 py-2 text-xs gap-1.5",
-    md: "px-5 py-2.5 text-sm gap-2",
-    lg: "px-7 py-3.5 text-base gap-2",
+    xs: "h-7  px-3   text-[11px] tracking-wide",
+    sm: "h-8  px-4   text-xs     tracking-wide",
+    md: "h-9  px-5   text-sm",
+    lg: "h-11 px-7   text-base",
   };
 
   const variants: Record<string, string> = {
-    primary:
-      "bg-blue-500 text-white " +
-      "shadow-[4px_4px_10px_rgba(59,110,248,0.35),-2px_-2px_6px_rgba(255,255,255,0.5)] " +
-      "hover:bg-blue-600 hover:shadow-[5px_5px_14px_rgba(59,110,248,0.4),-2px_-2px_8px_rgba(255,255,255,0.6)] " +
-      "active:scale-[0.97] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]",
+    accent:
+      "bg-[var(--accent)] text-white " +
+      "shadow-[var(--shadow-accent)] " +
+      "hover:bg-[var(--accent-h)] hover:shadow-[5px_5px_14px_rgba(120,121,241,0.40),-3px_-3px_10px_var(--neu-light)] " +
+      "active:scale-[0.96] active:shadow-[var(--shadow-accent-in)]",
 
     secondary:
-      "bg-white text-blue-600 border border-blue-100 " +
-      "shadow-[4px_4px_10px_rgba(59,110,248,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] " +
-      "hover:bg-blue-50 hover:border-blue-200 " +
-      "active:scale-[0.97] active:shadow-[inset_2px_2px_5px_rgba(59,110,248,0.12)]",
+      "text-[var(--text-1)] theme-transition " +
+      "shadow-[var(--shadow-out-sm)] bg-[var(--bg-2)] " +
+      "hover:bg-[var(--bg-3)] hover:shadow-[var(--shadow-out)] " +
+      "active:scale-[0.96] active:shadow-[var(--shadow-in-sm)] active:bg-[var(--bg)]",
 
     ghost:
-      "bg-transparent text-ink-2 hover:bg-blue-50 hover:text-blue-600 " +
-      "active:scale-[0.97]",
+      "text-[var(--text-2)] bg-transparent " +
+      "hover:bg-[var(--bg-3)] hover:text-[var(--text-1)] " +
+      "active:scale-[0.96]",
+
+    danger:
+      "text-white bg-[var(--accent-rose)] " +
+      "shadow-[4px_4px_10px_rgba(224,112,144,0.35),-2px_-2px_7px_var(--neu-light)] " +
+      "hover:opacity-90 active:scale-[0.96]",
   };
 
   return (
