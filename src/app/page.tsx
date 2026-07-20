@@ -1,406 +1,361 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import GlassPanel from "@/components/GlassPanel";
 import Button3D from "@/components/Button3D";
+import { renderMarkdown, DEFAULT_MARKDOWN } from "@/lib/markdownRenderer";
 
+// CodeMirror must be client-only (no SSR)
+const CodeMirrorEditor = dynamic(() => import("@/components/CodeMirrorEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex items-center justify-center text-blue-300 text-sm font-mono">
+      Loading editor…
+    </div>
+  ),
+});
+
+// ── Toolbar actions ─────────────────────────────────────────────────────────
+interface ToolbarBtnProps {
+  label: string;
+  title: string;
+  onClick: () => void;
+  active?: boolean;
+}
+function ToolbarBtn({ label, title, onClick, active }: ToolbarBtnProps) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      className={`
+        h-7 px-2.5 rounded-lg text-xs font-semibold font-mono transition-all duration-100 select-none
+        ${active
+          ? "bg-blue-500 text-white shadow-[inset_1px_1px_3px_rgba(0,0,0,0.2)]"
+          : "text-blue-700 hover:bg-blue-100 active:scale-95"
+        }
+      `}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ── Word count util ─────────────────────────────────────────────────────────
+function getStats(md: string) {
+  const words = md.trim() ? md.trim().split(/\s+/).length : 0;
+  const chars = md.length;
+  const readMin = Math.max(1, Math.round(words / 200));
+  return { words, chars, readMin };
+}
+
+// ── Main Page ───────────────────────────────────────────────────────────────
 export default function Home() {
-  const [editorMode, setEditorMode] = useState<"split" | "wysiwyg">("split");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN);
+  const [html, setHtml] = useState("");
+  const [mode, setMode] = useState<"split" | "wysiwyg">("split");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(50); // percent
+  const isDragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stats = getStats(markdown);
 
-  const sampleMarkdown = `# Selamat Datang di GlassMark ⚡
+  // ── Markdown → HTML (debounced) ──────────────────────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      renderMarkdown(markdown).then(setHtml);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [markdown]);
 
-GlassMark adalah All-in-One Markdown Tool dengan desain **Skeuomorphic + Liquid Glass** yang elegan.
+  // initial render
+  useEffect(() => {
+    renderMarkdown(DEFAULT_MARKDOWN).then(setHtml);
+  }, []);
 
-## Fitur Utama:
-- [x] Live Preview Real-time
-- [x] Dual Mode: Split-view & WYSIWYG
-- [ ] Diagram Mermaid & Math LaTeX
-- [ ] Export PDF, HTML & PNG
-- [ ] Table & README Generator
+  // ── Toolbar helpers ──────────────────────────────────────────────────────
+  const wrap = useCallback((before: string, after: string = before) => {
+    setMarkdown((md) => md + `${before}text${after}`);
+  }, []);
 
-\`\`\`javascript
-// Contoh Code Block
-const glassmark = {
-  aesthetics: "Liquid Glass",
-  tactility: "Skeuomorphic 3D",
-  speed: "Fast Client-side"
-};
-\`\`\``;
+  const insert = useCallback((snippet: string) => {
+    setMarkdown((md) => md + "\n" + snippet);
+  }, []);
+
+  // ── Drag-to-resize divider ───────────────────────────────────────────────
+  const onDividerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setLeftWidth(Math.min(80, Math.max(20, pct)));
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  // ── File import ──────────────────────────────────────────────────────────
+  const importFile = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".md,.markdown,.txt";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => setMarkdown(ev.target?.result as string);
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  // ── Copy to clipboard ────────────────────────────────────────────────────
+  const copyMarkdown = () => navigator.clipboard.writeText(markdown);
+  const copyHtml = () => navigator.clipboard.writeText(html);
+
+  // ── Warn before unload if edited ─────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (markdown !== DEFAULT_MARKDOWN) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [markdown]);
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-[#F8F9FD] p-4 md:p-6 flex flex-col justify-between selection:bg-brand-accent/20">
-      {/* Background Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-brand-accent/8 blur-[120px] animate-orb-1 pointer-events-none -z-10" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-brand-success/6 blur-[130px] animate-orb-2 pointer-events-none -z-10" />
-      <div className="absolute top-[35%] right-[20%] w-[40vw] h-[40vw] rounded-full bg-purple-500/5 blur-[110px] animate-orb-3 pointer-events-none -z-10" />
-
-      {/* Floating Glass Navbar */}
-      <GlassPanel className="w-full max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 z-50 mb-6">
+    <main className="h-screen flex flex-col overflow-hidden bg-surface-2 selection:bg-blue-200">
+      {/* ── NAVBAR ────────────────────────────────────────────────────── */}
+      <header className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-4 bg-white border-b border-blue-100 shadow-[0_2px_10px_rgba(59,110,248,0.07)]">
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-accent to-[#728fff] flex items-center justify-center shadow-md shadow-brand-accent/20">
-            <span className="font-display font-black text-white text-lg tracking-wider">
-              G
-            </span>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center shadow-[3px_3px_8px_rgba(59,110,248,0.35)]">
+            <span className="text-white font-display font-black text-sm">M</span>
           </div>
           <div>
-            <h1 className="font-display font-extrabold text-xl tracking-tight text-brand-ink flex items-center gap-1.5">
+            <span className="font-display font-extrabold text-lg text-ink leading-none">
               GlassMark
-              <span className="text-[10px] font-semibold bg-brand-accent/10 text-brand-accent px-2 py-0.5 rounded-full border border-brand-accent/25">
-                Fase 0
-              </span>
-            </h1>
-            <p className="text-[10px] text-brand-ink-light">
-              All-in-One Markdown Tool
-            </p>
-          </div>
-        </div>
-
-        {/* Mode Toggle Switch (Liquid Glass Mock) */}
-        <div className="relative flex p-1 bg-brand-surface rounded-xl border border-brand-ink/5 shadow-inner w-56">
-          <div
-            className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm border border-brand-ink/5 transition-all duration-300 ease-out"
-            style={{
-              left: editorMode === "split" ? "4px" : "112px",
-              width: "108px",
-            }}
-          />
-          <button
-            onClick={() => setEditorMode("split")}
-            className={`flex-1 relative z-10 py-1.5 text-xs font-display font-bold text-center transition-colors duration-200 ${
-              editorMode === "split"
-                ? "text-brand-accent"
-                : "text-brand-ink-light hover:text-brand-ink"
-            }`}
-          >
-            Split View
-          </button>
-          <button
-            onClick={() => setEditorMode("wysiwyg")}
-            className={`flex-1 relative z-10 py-1.5 text-xs font-display font-bold text-center transition-colors duration-200 ${
-              editorMode === "wysiwyg"
-                ? "text-brand-accent"
-                : "text-brand-ink-light hover:text-brand-ink"
-            }`}
-          >
-            WYSIWYG
-          </button>
-        </div>
-
-        {/* Action Buttons & Accent Picker */}
-        <div className="flex items-center gap-3">
-          {/* Mock Accent Picker */}
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-brand-surface/80 rounded-xl border border-brand-ink/5 mr-2">
-            <span className="text-[10px] font-semibold text-brand-ink-light mr-1">
-              Theme
             </span>
-            <button className="w-3.5 h-3.5 rounded-full bg-brand-accent border-2 border-white ring-2 ring-brand-accent/30" />
-            <button className="w-3.5 h-3.5 rounded-full bg-[#10B981] border border-white hover:ring-2 hover:ring-[#10B981]/30 transition-all" />
-            <button className="w-3.5 h-3.5 rounded-full bg-[#EC4899] border border-white hover:ring-2 hover:ring-[#EC4899]/30 transition-all" />
+            <span className="hidden sm:inline ml-2 text-[10px] bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">
+              Phase 1
+            </span>
           </div>
+        </div>
 
-          <Button3D
-            variant="glass"
-            size="sm"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+        {/* Mode Toggle */}
+        <div className="relative flex bg-blue-50 rounded-xl p-1 border border-blue-100 shadow-[inset_2px_2px_5px_rgba(59,110,248,0.1),inset_-1px_-1px_4px_rgba(255,255,255,0.8)]">
+          {(["split", "wysiwyg"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`relative z-10 px-4 py-1.5 text-xs font-display font-bold rounded-lg transition-all duration-200 ${
+                mode === m
+                  ? "bg-blue-500 text-white shadow-[2px_2px_6px_rgba(59,110,248,0.35)]"
+                  : "text-blue-400 hover:text-blue-600"
+              }`}
+            >
+              {m === "split" ? "Split View" : "WYSIWYG"}
+            </button>
+          ))}
+        </div>
+
+        {/* Right controls */}
+        <div className="flex items-center gap-2">
+          <button
+            title="Import .md file"
+            onClick={importFile}
+            className="h-8 px-3 text-xs font-semibold text-blue-600 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
           >
-            {sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-          </Button3D>
-
+            Import
+          </button>
+          <button
+            onClick={() => setSidebarOpen((o) => !o)}
+            className="h-8 px-3 text-xs font-semibold text-blue-600 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
+          >
+            {sidebarOpen ? "Hide" : "Tools"}
+          </button>
           <Button3D variant="primary" size="sm">
             Export
           </Button3D>
         </div>
-      </GlassPanel>
+      </header>
 
-      {/* Main Workspace Panel */}
-      <div className="flex-1 w-full max-w-7xl mx-auto flex gap-6 relative z-10 h-[calc(100vh-170px)] min-h-[500px]">
-        {/* Editor Containers */}
-        <GlassPanel className="flex-1 flex flex-col overflow-hidden h-full">
-          {/* Editor Toolbar */}
-          <div className="px-4 py-2 border-b border-brand-ink/5 bg-white/20 flex items-center justify-between">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <button
-                className="w-8 h-8 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors font-bold text-xs flex items-center justify-center"
-                title="Bold"
-              >
-                B
-              </button>
-              <button
-                className="w-8 h-8 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors italic font-serif text-xs flex items-center justify-center"
-                title="Italic"
-              >
-                I
-              </button>
-              <button
-                className="w-8 h-8 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors font-mono text-xs flex items-center justify-center"
-                title="Header"
-              >
-                H
-              </button>
-              <div className="w-[1px] h-4 bg-brand-ink/10 mx-1" />
-              <button
-                className="px-2 py-1 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors text-xs flex items-center justify-center"
-                title="List"
-              >
-                • List
-              </button>
-              <button
-                className="px-2 py-1 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors text-xs flex items-center justify-center"
-                title="Link"
-              >
-                Link
-              </button>
-              <button
-                className="px-2 py-1 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors text-xs flex items-center justify-center"
-                title="Image"
-              >
-                Img
-              </button>
-              <button
-                className="px-2 py-1 rounded-lg hover:bg-brand-ink/5 text-brand-ink-light hover:text-brand-ink transition-colors text-xs flex items-center justify-center"
-                title="Table"
-              >
-                Table
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-brand-ink-light bg-brand-surface px-2.5 py-1 rounded-md border border-brand-ink/5 font-semibold">
-                Auto-Save (Local)
-              </span>
-            </div>
-          </div>
+      {/* ── TOOLBAR ───────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 px-4 py-1.5 bg-white border-b border-blue-50 flex items-center gap-1 overflow-x-auto">
+        <ToolbarBtn label="B" title="Bold (Ctrl+B)" onClick={() => wrap("**")} />
+        <ToolbarBtn label="I" title="Italic (Ctrl+I)" onClick={() => wrap("*")} />
+        <ToolbarBtn label="~~" title="Strikethrough" onClick={() => wrap("~~")} />
+        <ToolbarBtn label="`" title="Inline Code" onClick={() => wrap("`")} />
+        <div className="w-px h-5 bg-blue-100 mx-1 flex-shrink-0" />
+        <ToolbarBtn label="H1" title="Heading 1" onClick={() => insert("# Heading")} />
+        <ToolbarBtn label="H2" title="Heading 2" onClick={() => insert("## Heading")} />
+        <ToolbarBtn label="H3" title="Heading 3" onClick={() => insert("### Heading")} />
+        <div className="w-px h-5 bg-blue-100 mx-1 flex-shrink-0" />
+        <ToolbarBtn label="• List" title="Bullet list" onClick={() => insert("- Item")} />
+        <ToolbarBtn label="1. List" title="Ordered list" onClick={() => insert("1. Item")} />
+        <ToolbarBtn label="☑ Task" title="Task list" onClick={() => insert("- [ ] Task")} />
+        <ToolbarBtn label="❝" title="Blockquote" onClick={() => insert("> Quote")} />
+        <div className="w-px h-5 bg-blue-100 mx-1 flex-shrink-0" />
+        <ToolbarBtn label="Link" title="Insert link" onClick={() => insert("[Label](url)")} />
+        <ToolbarBtn label="Img" title="Insert image" onClick={() => insert("![Alt](url)")} />
+        <ToolbarBtn label="Table" title="Insert table" onClick={() => insert("| Col 1 | Col 2 |\n|-------|-------|\n| A     | B     |")} />
+        <ToolbarBtn label="---" title="Horizontal rule" onClick={() => insert("---")} />
+        <ToolbarBtn label="```" title="Code block" onClick={() => insert("```js\ncode here\n```")} />
+        <div className="flex-1" />
+        <button
+          onClick={copyMarkdown}
+          className="h-7 px-2.5 rounded-lg text-[11px] font-semibold text-blue-500 hover:bg-blue-50 transition-colors"
+          title="Copy raw Markdown"
+        >
+          Copy MD
+        </button>
+        <button
+          onClick={copyHtml}
+          className="h-7 px-2.5 rounded-lg text-[11px] font-semibold text-blue-500 hover:bg-blue-50 transition-colors"
+          title="Copy rendered HTML"
+        >
+          Copy HTML
+        </button>
+      </div>
 
-          {/* Editors Layout */}
-          <div className="flex-1 flex overflow-hidden relative">
-            {/* Split Mode */}
-            {editorMode === "split" ? (
-              <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-brand-ink/5 h-full">
-                {/* Left Pane - Source Pane Mock */}
-                <div className="flex-1 flex flex-col h-full min-w-[200px] overflow-hidden">
-                  <div className="px-4 py-1.5 bg-brand-surface/40 text-[10px] font-bold text-brand-ink-light border-b border-brand-ink/5 tracking-wider">
-                    SOURCE EDITOR (MARKDOWN)
-                  </div>
-                  <div className="flex-1 p-4 font-mono text-sm overflow-auto bg-white/10 select-text whitespace-pre-wrap leading-relaxed text-brand-ink-light focus:outline-none">
-                    <div className="flex gap-4 min-h-full">
-                      <div className="text-right text-brand-ink-light/25 select-none border-r border-brand-ink/5 pr-3 text-xs leading-relaxed hidden sm:block">
-                        {Array.from({ length: 18 }).map((_, i) => (
-                          <div key={i}>{i + 1}</div>
-                        ))}
-                      </div>
-                      <div className="flex-1 outline-none text-brand-ink select-text whitespace-pre-wrap leading-relaxed">
-                        {sampleMarkdown}
-                      </div>
-                    </div>
-                  </div>
+      {/* ── WORKSPACE ─────────────────────────────────────────────────── */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Main editor area */}
+        <div ref={containerRef} className="flex-1 flex overflow-hidden">
+          {mode === "split" ? (
+            <>
+              {/* Left: CodeMirror editor */}
+              <div
+                className="flex flex-col overflow-hidden border-r border-blue-100"
+                style={{ width: `${leftWidth}%` }}
+              >
+                <div className="flex-shrink-0 px-4 py-1.5 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-blue-400 tracking-widest uppercase">
+                    Markdown Source
+                  </span>
                 </div>
-
-                {/* Draggable Divider (Mock) */}
-                <div className="hidden md:flex flex-col items-center justify-center w-3 hover:bg-brand-accent/5 cursor-col-resize transition-all z-20 group">
-                  <div className="w-1.5 h-12 rounded-full bg-brand-ink/15 group-hover:bg-brand-accent transition-colors shadow-sm" />
-                </div>
-
-                {/* Right Pane - Preview Pane Mock */}
-                <div className="flex-1 flex flex-col h-full min-w-[200px] overflow-hidden">
-                  <div className="px-4 py-1.5 bg-brand-surface/40 text-[10px] font-bold text-brand-ink-light border-b border-brand-ink/5 tracking-wider">
-                    LIVE PREVIEW (HTML)
-                  </div>
-                  <div className="flex-1 p-6 overflow-auto bg-white/5 select-text">
-                    <h1 className="font-display font-extrabold text-2xl text-brand-ink mb-3 tracking-tight border-b border-brand-ink/5 pb-2">
-                      Selamat Datang di GlassMark ⚡
-                    </h1>
-                    <p className="text-brand-ink-light text-sm leading-relaxed mb-4">
-                      GlassMark adalah All-in-One Markdown Tool dengan desain{" "}
-                      <strong className="text-brand-ink font-semibold">
-                        Skeuomorphic + Liquid Glass
-                      </strong>{" "}
-                      yang elegan.
-                    </p>
-                    <h2 className="font-display font-bold text-lg text-brand-ink mt-6 mb-3 tracking-tight">
-                      Fitur Utama:
-                    </h2>
-                    <ul className="space-y-2 mb-6">
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink-light">
-                        <span className="w-4 h-4 rounded bg-brand-success/20 border border-brand-success text-brand-success flex items-center justify-center text-[10px] font-bold">
-                          ✓
-                        </span>
-                        Live Preview Real-time
-                      </li>
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink-light">
-                        <span className="w-4 h-4 rounded bg-brand-success/20 border border-brand-success text-brand-success flex items-center justify-center text-[10px] font-bold">
-                          ✓
-                        </span>
-                        Dual Mode: Split-view & WYSIWYG
-                      </li>
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink-light">
-                        <span className="w-4 h-4 rounded bg-brand-ink/5 border border-brand-ink/15 text-transparent flex items-center justify-center text-[10px] font-bold">
-                          -
-                        </span>
-                        Diagram Mermaid & Math LaTeX
-                      </li>
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink-light">
-                        <span className="w-4 h-4 rounded bg-brand-ink/5 border border-brand-ink/15 text-transparent flex items-center justify-center text-[10px] font-bold">
-                          -
-                        </span>
-                        Export PDF, HTML & PNG
-                      </li>
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink-light">
-                        <span className="w-4 h-4 rounded bg-brand-ink/5 border border-brand-ink/15 text-transparent flex items-center justify-center text-[10px] font-bold">
-                          -
-                        </span>
-                        Table & README Generator
-                      </li>
-                    </ul>
-                    <div className="bg-brand-surface/80 rounded-xl p-4 border border-brand-ink/5 font-mono text-xs leading-relaxed text-brand-ink-light mb-4 shadow-sm">
-                      <div className="text-[10px] font-bold text-brand-accent/60 mb-1">
-                        JAVASCRIPT
-                      </div>
-                      <span className="text-purple-600">const</span> glassmark ={" "}
-                      {"{"} <br />
-                      &nbsp;&nbsp;aesthetics:{" "}
-                      <span className="text-green-600">{"\"Liquid Glass\""}</span>,{" "}
-                      <br />
-                      &nbsp;&nbsp;tactility:{" "}
-                      <span className="text-green-600">{"\"Skeuomorphic 3D\""}</span>
-                      , <br />
-                      &nbsp;&nbsp;speed:{" "}
-                      <span className="text-green-600">{"\"Fast Client-side\""}</span>{" "}
-                      <br />
-                      {"};"}
-                    </div>
-                  </div>
+                <div className="flex-1 overflow-hidden bg-white">
+                  <CodeMirrorEditor value={markdown} onChange={setMarkdown} />
                 </div>
               </div>
-            ) : (
-              /* WYSIWYG Mode Mock */
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="px-4 py-1.5 bg-brand-surface/40 text-[10px] font-bold text-brand-ink-light border-b border-brand-ink/5 tracking-wider">
-                  WYSIWYG EDITOR (RICH TEXT DIRECT-EDIT)
+
+              {/* Divider */}
+              <div
+                className="resize-divider hover:bg-blue-400 transition-colors"
+                onMouseDown={onDividerMouseDown}
+              />
+
+              {/* Right: Preview */}
+              <div
+                className="flex flex-col overflow-hidden"
+                style={{ width: `${100 - leftWidth}%` }}
+              >
+                <div className="flex-shrink-0 px-4 py-1.5 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-blue-400 tracking-widest uppercase">
+                    Live Preview
+                  </span>
+                  <span className="text-[10px] text-blue-300 font-semibold">GFM ✓</span>
                 </div>
-                <div className="flex-1 p-8 overflow-auto bg-white/10 select-text max-w-4xl mx-auto w-full leading-relaxed">
-                  <div className="outline-none min-h-full" contentEditable>
-                    <h1 className="font-display font-extrabold text-3xl text-brand-ink mb-4 tracking-tight border-b border-brand-ink/10 pb-2">
-                      Selamat Datang di GlassMark ⚡
-                    </h1>
-                    <p className="text-brand-ink text-base leading-relaxed mb-4">
-                      GlassMark adalah All-in-One Markdown Tool dengan desain{" "}
-                      <strong>Skeuomorphic + Liquid Glass</strong> yang elegan.
-                    </p>
-                    <h2 className="font-display font-bold text-xl text-brand-ink mt-8 mb-4 tracking-tight">
-                      Fitur Utama:
-                    </h2>
-                    <ul className="space-y-2 mb-6">
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink">
-                        <span className="w-4 h-4 rounded bg-brand-success/20 border border-brand-success text-brand-success flex items-center justify-center text-[10px] font-bold">
-                          ✓
-                        </span>
-                        Live Preview Real-time
-                      </li>
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink">
-                        <span className="w-4 h-4 rounded bg-brand-success/20 border border-brand-success text-brand-success flex items-center justify-center text-[10px] font-bold">
-                          ✓
-                        </span>
-                        Dual Mode: Split-view & WYSIWYG
-                      </li>
-                      <li className="flex items-center gap-2.5 text-sm text-brand-ink">
-                        <span className="w-4 h-4 rounded bg-brand-ink/5 border border-brand-ink/15 text-transparent flex items-center justify-center text-[10px] font-bold">
-                          -
-                        </span>
-                        Diagram Mermaid & Math LaTeX
-                      </li>
-                    </ul>
-                  </div>
+                <div className="flex-1 overflow-auto bg-white px-8 py-6">
+                  <div
+                    className="md-preview max-w-2xl mx-auto"
+                    dangerouslySetInnerHTML={{ __html: html }}
+                  />
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Status Bar */}
-          <div className="px-4 py-2 border-t border-brand-ink/5 bg-brand-surface/40 flex flex-wrap items-center justify-between text-[11px] text-brand-ink-light gap-2">
-            <div className="flex items-center gap-4">
-              <span>
-                Words: <strong>42</strong>
-              </span>
-              <span>
-                Characters: <strong>318</strong>
-              </span>
-              <span>
-                Reading Time: <strong>~1 min</strong>
-              </span>
+            </>
+          ) : (
+            /* WYSIWYG mode — full-width editor centered */
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-shrink-0 px-4 py-1.5 bg-blue-50 border-b border-blue-100">
+                <span className="text-[10px] font-bold text-blue-400 tracking-widest uppercase">
+                  WYSIWYG Editor
+                </span>
+              </div>
+              <div className="flex-1 overflow-auto bg-white">
+                <div className="max-w-3xl mx-auto py-8 px-4">
+                  <CodeMirrorEditor value={markdown} onChange={setMarkdown} />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-3 font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-success animate-pulse" />
-                Live Sync
-              </span>
-              <span>UTF-8</span>
-            </div>
-          </div>
-        </GlassPanel>
+          )}
+        </div>
 
-        {/* Sidebar Kanan (Collapsible) */}
+        {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
         <div
-          className={`h-full transition-all duration-300 ease-in-out overflow-hidden flex ${
-            sidebarOpen ? "w-80 opacity-100" : "w-0 opacity-0"
+          className={`flex-shrink-0 flex flex-col bg-white border-l border-blue-100 overflow-hidden transition-all duration-300 ease-in-out ${
+            sidebarOpen ? "w-72" : "w-0"
           }`}
         >
-          <GlassPanel className="w-80 flex flex-col h-full p-4 border-l border-brand-ink/5">
-            <h3 className="font-display font-bold text-sm text-brand-ink mb-4 pb-2 border-b border-brand-ink/5">
-              Markdown Cheatsheet
-            </h3>
-            <div className="flex-1 overflow-auto space-y-4 pr-1 text-xs">
-              <div className="space-y-2 bg-brand-surface/50 p-3 rounded-xl border border-brand-ink/5">
-                <div className="font-semibold text-brand-ink flex justify-between">
-                  <span>Bold / Italic</span>
-                  <span className="text-[10px] text-brand-accent font-bold">
-                    Insert
-                  </span>
-                </div>
-                <code className="block bg-white p-1.5 rounded border border-brand-ink/5 text-brand-ink-light">
-                  **teks tebal** <br />
-                  *teks miring*
+          <div className="flex-shrink-0 px-4 py-3 border-b border-blue-100">
+            <h2 className="font-display font-bold text-sm text-ink">Cheatsheet</h2>
+          </div>
+          <div className="flex-1 overflow-auto p-3 space-y-2">
+            {[
+              { name: "Bold", syntax: "**text**" },
+              { name: "Italic", syntax: "*text*" },
+              { name: "Strikethrough", syntax: "~~text~~" },
+              { name: "Heading 1", syntax: "# Title" },
+              { name: "Heading 2", syntax: "## Title" },
+              { name: "Link", syntax: "[Label](url)" },
+              { name: "Image", syntax: "![Alt](url)" },
+              { name: "Code Inline", syntax: "`code`" },
+              { name: "Code Block", syntax: "```js\ncode\n```" },
+              { name: "Blockquote", syntax: "> quote" },
+              { name: "Bullet List", syntax: "- item" },
+              { name: "Ordered List", syntax: "1. item" },
+              { name: "Task List", syntax: "- [ ] task" },
+              { name: "Table", syntax: "| A | B |\n|---|---|\n| 1 | 2 |" },
+              { name: "Horizontal Rule", syntax: "---" },
+            ].map((item) => (
+              <button
+                key={item.name}
+                onClick={() => setMarkdown((md) => md + "\n" + item.syntax)}
+                className="w-full text-left p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 hover:border-blue-200 transition-all group"
+              >
+                <div className="text-xs font-semibold text-ink mb-1">{item.name}</div>
+                <code className="text-[10px] text-blue-500 font-mono whitespace-pre-line leading-tight block">
+                  {item.syntax}
                 </code>
-              </div>
-              <div className="space-y-2 bg-brand-surface/50 p-3 rounded-xl border border-brand-ink/5">
-                <div className="font-semibold text-brand-ink flex justify-between">
-                  <span>Headers</span>
-                  <span className="text-[10px] text-brand-accent font-bold">
-                    Insert
-                  </span>
-                </div>
-                <code className="block bg-white p-1.5 rounded border border-brand-ink/5 text-brand-ink-light">
-                  # Header 1 <br />
-                  ## Header 2 <br />
-                  ### Header 3
-                </code>
-              </div>
-              <div className="space-y-2 bg-brand-surface/50 p-3 rounded-xl border border-brand-ink/5">
-                <div className="font-semibold text-brand-ink flex justify-between">
-                  <span>Links & Images</span>
-                  <span className="text-[10px] text-brand-accent font-bold">
-                    Insert
-                  </span>
-                </div>
-                <code className="block bg-white p-1.5 rounded border border-brand-ink/5 text-brand-ink-light whitespace-normal">
-                  [Judul Link](url) <br />
-                  ![Alt Teks](url_gambar)
-                </code>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-brand-ink/5">
-              <Button3D variant="secondary" className="w-full text-center" size="sm">
-                Table Generator
-              </Button3D>
-            </div>
-          </GlassPanel>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Footer / Info */}
-      <footer className="text-center text-[10px] text-brand-ink-light mt-6 pb-2 relative z-10">
-        &copy; {new Date().getFullYear()} GlassMark — Dibangun dengan AntiGravity
-        dan Next.js.
+      {/* ── STATUS BAR ────────────────────────────────────────────────── */}
+      <footer className="flex-shrink-0 px-5 py-1.5 bg-white border-t border-blue-100 flex items-center justify-between text-[11px] text-blue-400 font-medium">
+        <div className="flex items-center gap-5">
+          <span>Words: <strong className="text-ink-2">{stats.words}</strong></span>
+          <span>Chars: <strong className="text-ink-2">{stats.chars}</strong></span>
+          <span>~{stats.readMin} min read</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            Live
+          </span>
+          <span>UTF-8</span>
+          <span>Markdown</span>
+        </div>
       </footer>
     </main>
   );
