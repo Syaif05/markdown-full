@@ -307,16 +307,42 @@ export default function Home() {
   };
 
   // ── Copy ─────────────────────────────────────────────────────────────
-  const copy = (type: "md" | "html" | "text") => {
-    let content = "";
+  const copy = async (type: "md" | "html" | "text") => {
     if (type === "md") {
-      content = markdown;
+      await navigator.clipboard.writeText(markdown);
     } else if (type === "html") {
-      content = html;
+      await navigator.clipboard.writeText(html);
     } else if (type === "text") {
-      content = getTextContent(html, cleanCopy);
+      if (cleanCopy) {
+        // Rich Formatted Text Copy for Word / Docs / Pages (Preserves headings, font size, bold, etc.)
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+        // Clean math/svg artifacts
+        temp.querySelectorAll(".katex-mathml").forEach(el => el.remove());
+        temp.querySelectorAll(".mermaid, code.language-mermaid, svg").forEach(el => el.remove());
+
+        const cleanHtml = temp.innerHTML;
+        const plainText = temp.innerText || temp.textContent || "";
+
+        try {
+          const blobHtml = new Blob([cleanHtml], { type: "text/html" });
+          const blobText = new Blob([plainText], { type: "text/plain" });
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              "text/html": blobHtml,
+              "text/plain": blobText,
+            })
+          ]);
+        } catch (err) {
+          console.warn("ClipboardItem write failed, falling back to writeText:", err);
+          await navigator.clipboard.writeText(plainText);
+        }
+      } else {
+        // Raw Plain Text (flat unformatted text)
+        const plainText = getTextContent(html, false);
+        await navigator.clipboard.writeText(plainText);
+      }
     }
-    navigator.clipboard.writeText(content);
     setCopied(type);
     setTimeout(() => setCopied(""), 1800);
   };
@@ -545,14 +571,14 @@ export default function Home() {
         <div className="flex items-center gap-1 border-l border-[var(--border-subtle)] pl-2 ml-1">
           <button
             onClick={() => setCleanCopy(c => !c)}
-            title="Toggle Clean Copy: removes math codes and SVG text for academics"
+            title={cleanCopy ? "Formatted Copy ON: preserves headings, font sizes & weights in Word/Docs" : "Raw Text ON: flat unformatted plain text"}
             className="h-7 px-2 rounded-lg text-[10px] font-semibold transition-all duration-150 active:scale-95 flex items-center gap-1"
             style={{ 
               color: cleanCopy ? "var(--accent-teal)" : "var(--text-3)",
               background: cleanCopy ? "rgba(45,212,191,0.12)" : "transparent"
             }}
           >
-            {cleanCopy ? "✓ Clean Text" : "Raw Text"}
+            {cleanCopy ? "✓ Formatted Text" : "Raw Text"}
           </button>
           <button
             onClick={() => copy("text")}
