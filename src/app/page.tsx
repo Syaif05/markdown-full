@@ -133,11 +133,18 @@ export default function Home() {
   const [isMobile, setIsMobile]         = useState(false);
   const [mobileTab, setMobileTab]       = useState<"source" | "preview">("source");
   const [sourceViewMode, setSourceViewMode] = useState<"md" | "html" | "text">("md");
+  const [cleanCopy, setCleanCopy]       = useState(true);
 
-  const getTextContent = useCallback((htmlStr: string) => {
+  const getTextContent = useCallback((htmlStr: string, clean: boolean) => {
     if (typeof document === "undefined") return "";
     const temp = document.createElement("div");
     temp.innerHTML = htmlStr;
+    
+    if (clean) {
+      temp.querySelectorAll(".katex-mathml").forEach(el => el.remove());
+      temp.querySelectorAll(".mermaid, code.language-mermaid, svg").forEach(el => el.remove());
+    }
+    
     return temp.innerText || temp.textContent || "";
   }, []);
 
@@ -173,9 +180,18 @@ export default function Home() {
 
   // ── Live preview (debounced) ────────────────────────────────────────
   useEffect(() => {
-    const t = setTimeout(() => renderMarkdown(markdown).then(setHtml), 100);
+    const t = setTimeout(() => {
+      if (sourceViewMode === "md") {
+        renderMarkdown(markdown).then(setHtml);
+      } else if (sourceViewMode === "html") {
+        setHtml(markdown);
+      } else if (sourceViewMode === "text") {
+        const escaped = markdown.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        setHtml(`<pre style="white-space: pre-wrap; font-family: inherit;">${escaped}</pre>`);
+      }
+    }, 100);
     return () => clearTimeout(t);
-  }, [markdown]);
+  }, [markdown, sourceViewMode]);
 
   useEffect(() => { renderMarkdown(DEFAULT_MARKDOWN).then(setHtml); }, []);
 
@@ -298,7 +314,7 @@ export default function Home() {
     } else if (type === "html") {
       content = html;
     } else if (type === "text") {
-      content = getTextContent(html);
+      content = getTextContent(html, cleanCopy);
     }
     navigator.clipboard.writeText(content);
     setCopied(type);
@@ -526,13 +542,26 @@ export default function Home() {
         >
           {copied === "html" ? "✓ Copied" : "Copy HTML"}
         </button>
-        <button
-          onClick={() => copy("text")}
-          className="h-7 px-3 rounded-lg text-[11px] font-semibold transition-all duration-150 active:scale-95"
-          style={{ color: copied === "text" ? "var(--accent-teal)" : "var(--text-3)" }}
-        >
-          {copied === "text" ? "✓ Copied" : "Copy Text"}
-        </button>
+        <div className="flex items-center gap-1 border-l border-[var(--border-subtle)] pl-2 ml-1">
+          <button
+            onClick={() => setCleanCopy(c => !c)}
+            title="Toggle Clean Copy: removes math codes and SVG text for academics"
+            className="h-7 px-2 rounded-lg text-[10px] font-semibold transition-all duration-150 active:scale-95 flex items-center gap-1"
+            style={{ 
+              color: cleanCopy ? "var(--accent-teal)" : "var(--text-3)",
+              background: cleanCopy ? "rgba(45,212,191,0.12)" : "transparent"
+            }}
+          >
+            {cleanCopy ? "✓ Clean Text" : "Raw Text"}
+          </button>
+          <button
+            onClick={() => copy("text")}
+            className="h-7 px-3 rounded-lg text-[11px] font-semibold transition-all duration-150 active:scale-95"
+            style={{ color: copied === "text" ? "var(--accent-teal)" : "var(--text-3)" }}
+          >
+            {copied === "text" ? "✓ Copied" : "Copy Text"}
+          </button>
+        </div>
       </div>
 
       {/* ════ WORKSPACE ═══════════════════════════════════════════════════ */}
@@ -575,16 +604,12 @@ export default function Home() {
                 </div>
                 {mobileTab === "source" ? (
                   <div className="flex-1 overflow-hidden">
-                    {sourceViewMode === "md" ? (
-                      <CodeMirrorEditor value={markdown} onChange={setMarkdown} isDark={isDark} />
-                    ) : (
-                      <CodeMirrorEditor 
-                        value={sourceViewMode === "html" ? html : getTextContent(html)} 
-                        onChange={() => {}} 
-                        isDark={isDark} 
-                        readOnly={true} 
-                      />
-                    )}
+                    <CodeMirrorEditor 
+                      value={markdown} 
+                      onChange={setMarkdown} 
+                      isDark={isDark} 
+                      language={sourceViewMode}
+                    />
                   </div>
                 ) : (
                   <div className="flex-1 overflow-auto px-2 py-4 bg-[var(--bg-2)]">
@@ -613,20 +638,12 @@ export default function Home() {
                     </select>
                   </PaneLabel>
                   <div className="flex-1 overflow-hidden">
-                    {sourceViewMode === "md" ? (
-                      <CodeMirrorEditor
-                        value={markdown}
-                        onChange={setMarkdown}
-                        isDark={isDark}
-                      />
-                    ) : (
-                      <CodeMirrorEditor
-                        value={sourceViewMode === "html" ? html : getTextContent(html)}
-                        onChange={() => {}}
-                        isDark={isDark}
-                        readOnly={true}
-                      />
-                    )}
+                    <CodeMirrorEditor
+                      value={markdown}
+                      onChange={setMarkdown}
+                      isDark={isDark}
+                      language={sourceViewMode}
+                    />
                   </div>
                 </div>
 

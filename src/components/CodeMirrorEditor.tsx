@@ -24,6 +24,7 @@ import {
   syntaxHighlighting,
 } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
+import { html as htmlLang } from "@codemirror/lang-html";
 
 // ── Syntax highlight — Light (Electric Blue & Orange palette) ─────────────
 const lightHL = HighlightStyle.define([
@@ -126,6 +127,7 @@ function buildEditorTheme(dark: boolean) {
 const themeComp = new Compartment();
 const hlComp    = new Compartment();
 const readOnlyComp = new Compartment();
+const langComp = new Compartment();
 
 interface Props {
   value: string;
@@ -133,6 +135,7 @@ interface Props {
   isDark: boolean;
   className?: string;
   readOnly?: boolean;
+  language?: "md" | "html" | "text";
 }
 
 export default function CodeMirrorEditor({
@@ -141,6 +144,7 @@ export default function CodeMirrorEditor({
   isDark,
   className = "",
   readOnly = false,
+  language = "md",
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef      = useRef<EditorView | null>(null);
@@ -166,7 +170,11 @@ export default function CodeMirrorEditor({
         bracketMatching(),
         EditorView.lineWrapping,
         // Language
-        markdown({ base: markdownLanguage, codeLanguages: languages }),
+        langComp.of(
+          language === "html" ? htmlLang() : 
+          language === "md" ? markdown({ base: markdownLanguage, codeLanguages: languages }) : 
+          []
+        ),
         // Keymaps
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         // Read only
@@ -210,6 +218,19 @@ export default function CodeMirrorEditor({
       effects: readOnlyComp.reconfigure(EditorState.readOnly.of(readOnly)),
     });
   }, [readOnly]);
+
+  // ── Reconfigure language ─────────────────────────────────────────────
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: langComp.reconfigure(
+        language === "html" ? htmlLang() : 
+        language === "md" ? markdown({ base: markdownLanguage, codeLanguages: languages }) : 
+        []
+      ),
+    });
+  }, [language]);
 
   // ── Sync external value changes (file import) ────────────────────────
   useEffect(() => {
