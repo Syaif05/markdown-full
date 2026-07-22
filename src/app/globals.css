@@ -310,8 +310,19 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════
-   MARKDOWN PREVIEW
+   MARKDOWN PREVIEW & PROSEMIRROR WYSIWYG
 ════════════════════════════════════════════════════════════ */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--text-3);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.ProseMirror:focus {
+  outline: none !important;
+}
+
 .md-preview {
   color: var(--md-body);
   line-height: 1.8;
