@@ -228,7 +228,7 @@ const WysiwygEditor = forwardRef<WysiwygRef, Props>(function WysiwygEditor(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentMd = (editor.storage as any).markdown?.getMarkdown?.() ?? "";
     if (initialMarkdown !== currentMd && initialMarkdown !== editor.getHTML()) {
-      editor.commands.setContent(initialMarkdown, false);
+      editor.commands.setContent(initialMarkdown);
     }
   }, [initialMarkdown, editor]);
 
