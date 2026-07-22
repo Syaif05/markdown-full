@@ -187,7 +187,7 @@ export default function Home() {
         setHtml(markdown);
       } else if (sourceViewMode === "text") {
         const escaped = markdown.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        setHtml(`<pre style="white-space: pre-wrap; font-family: inherit;">${escaped}</pre>`);
+        setHtml(`<div style="white-space: pre-wrap; font-family: inherit; color: var(--text-1); line-height: 1.6;">${escaped}</div>`);
       }
     }, 100);
     return () => clearTimeout(t);
