@@ -125,12 +125,14 @@ function buildEditorTheme(dark: boolean) {
 // ── Compartments (module-level — one instance for the whole app) ─────────
 const themeComp = new Compartment();
 const hlComp    = new Compartment();
+const readOnlyComp = new Compartment();
 
 interface Props {
   value: string;
   onChange: (val: string) => void;
   isDark: boolean;
   className?: string;
+  readOnly?: boolean;
 }
 
 export default function CodeMirrorEditor({
@@ -138,6 +140,7 @@ export default function CodeMirrorEditor({
   onChange,
   isDark,
   className = "",
+  readOnly = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef      = useRef<EditorView | null>(null);
@@ -166,6 +169,8 @@ export default function CodeMirrorEditor({
         markdown({ base: markdownLanguage, codeLanguages: languages }),
         // Keymaps
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+        // Read only
+        readOnlyComp.of(EditorState.readOnly.of(readOnly)),
         // Change listener
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -196,6 +201,15 @@ export default function CodeMirrorEditor({
       ],
     });
   }, [isDark]);
+
+  // ── Reconfigure readOnly ─────────────────────────────────────────────
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: readOnlyComp.reconfigure(EditorState.readOnly.of(readOnly)),
+    });
+  }, [readOnly]);
 
   // ── Sync external value changes (file import) ────────────────────────
   useEffect(() => {

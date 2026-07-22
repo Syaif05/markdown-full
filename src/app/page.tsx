@@ -44,15 +44,17 @@ function EditorSkeleton({ text = "Loading editor…" }: { text?: string }) {
 }
 
 // ── Pane label header ─────────────────────────────────────────────────────
-function PaneLabel({ text, badge }: { text: string; badge?: string }) {
+function PaneLabel({ text, badge, children }: { text: string; badge?: string; children?: React.ReactNode }) {
   return (
     <div
       className="flex-shrink-0 px-4 py-2 flex items-center justify-between border-b border-[var(--border-subtle)]"
       style={{ background: "var(--ed-gutter-bg)" }}
     >
-      <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "var(--text-3)" }}>
-        {text}
-      </span>
+      {children ? children : (
+        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "var(--text-3)" }}>
+          {text}
+        </span>
+      )}
       {badge && (
         <span
           className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -130,6 +132,14 @@ export default function Home() {
   const [cheatSearch, setCheatSearch]   = useState("");
   const [isMobile, setIsMobile]         = useState(false);
   const [mobileTab, setMobileTab]       = useState<"source" | "preview">("source");
+  const [sourceViewMode, setSourceViewMode] = useState<"md" | "html" | "text">("md");
+
+  const getTextContent = useCallback((htmlStr: string) => {
+    if (typeof document === "undefined") return "";
+    const temp = document.createElement("div");
+    temp.innerHTML = htmlStr;
+    return temp.innerText || temp.textContent || "";
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -288,9 +298,7 @@ export default function Home() {
     } else if (type === "html") {
       content = html;
     } else if (type === "text") {
-      const temp = document.createElement("div");
-      temp.innerHTML = html;
-      content = temp.innerText || temp.textContent || "";
+      content = getTextContent(html);
     }
     navigator.clipboard.writeText(content);
     setCopied(type);
@@ -538,16 +546,22 @@ export default function Home() {
               /* ── Split View Mobile (Tabs) ───────────────────────────── */
               <div className={`flex-1 flex flex-col overflow-hidden ${getSlideClass()}`}>
                 <div className="flex border-b border-[var(--border-subtle)]" style={{ background: "var(--ed-gutter-bg)" }}>
-                  <button 
-                    className="flex-1 py-3 text-xs font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                    style={{ 
-                      color: mobileTab === "source" ? "var(--accent)" : "var(--text-3)",
-                      borderBottom: mobileTab === "source" ? "2px solid var(--accent)" : "2px solid transparent"
-                    }}
-                    onClick={() => setMobileTab("source")}
-                  >
-                    Markdown Source
-                  </button>
+                  <div className="flex-1 flex flex-col justify-center" style={{ borderBottom: mobileTab === "source" ? "2px solid var(--accent)" : "2px solid transparent" }}>
+                    <select 
+                      value={sourceViewMode}
+                      onChange={(e) => {
+                        setSourceViewMode(e.target.value as any);
+                        setMobileTab("source");
+                      }}
+                      onClick={() => setMobileTab("source")}
+                      className="w-full py-3 text-center text-xs font-bold bg-transparent outline-none cursor-pointer appearance-none"
+                      style={{ color: mobileTab === "source" ? "var(--accent)" : "var(--text-3)" }}
+                    >
+                      <option value="md">Markdown Source</option>
+                      <option value="html">HTML Source</option>
+                      <option value="text">Plain Text</option>
+                    </select>
+                  </div>
                   <button 
                     className="flex-1 py-3 text-xs font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                     style={{ 
@@ -561,11 +575,20 @@ export default function Home() {
                 </div>
                 {mobileTab === "source" ? (
                   <div className="flex-1 overflow-hidden">
-                    <CodeMirrorEditor value={markdown} onChange={setMarkdown} isDark={isDark} />
+                    {sourceViewMode === "md" ? (
+                      <CodeMirrorEditor value={markdown} onChange={setMarkdown} isDark={isDark} />
+                    ) : (
+                      <CodeMirrorEditor 
+                        value={sourceViewMode === "html" ? html : getTextContent(html)} 
+                        onChange={() => {}} 
+                        isDark={isDark} 
+                        readOnly={true} 
+                      />
+                    )}
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-auto px-4 py-6" style={{ background: "var(--bg-2)" }}>
-                    <div className="md-preview max-w-2xl mx-auto" dangerouslySetInnerHTML={{ __html: html }} />
+                  <div className="flex-1 overflow-auto px-2 py-4 bg-[var(--bg-2)]">
+                    <div className="md-preview mx-auto bg-[var(--bg)] shadow-[var(--shadow-out)] rounded-xl p-4 sm:p-8 min-h-full border border-[var(--border-subtle)]" dangerouslySetInnerHTML={{ __html: html }} />
                   </div>
                 )}
               </div>
@@ -577,13 +600,33 @@ export default function Home() {
                   className="flex flex-col overflow-hidden border-r border-[var(--border-subtle)]"
                   style={{ width: `${leftWidth}%` }}
                 >
-                  <PaneLabel text="Markdown Source" badge="Editor" />
+                  <PaneLabel text="" badge="Editor">
+                    <select 
+                      value={sourceViewMode}
+                      onChange={(e) => setSourceViewMode(e.target.value as "md" | "html" | "text")}
+                      className="text-[10px] font-bold tracking-widest uppercase bg-transparent border-none outline-none cursor-pointer"
+                      style={{ color: "var(--text-3)" }}
+                    >
+                      <option value="md">Markdown Source</option>
+                      <option value="html">HTML Output</option>
+                      <option value="text">Plain Text</option>
+                    </select>
+                  </PaneLabel>
                   <div className="flex-1 overflow-hidden">
-                    <CodeMirrorEditor
-                      value={markdown}
-                      onChange={setMarkdown}
-                      isDark={isDark}
-                    />
+                    {sourceViewMode === "md" ? (
+                      <CodeMirrorEditor
+                        value={markdown}
+                        onChange={setMarkdown}
+                        isDark={isDark}
+                      />
+                    ) : (
+                      <CodeMirrorEditor
+                        value={sourceViewMode === "html" ? html : getTextContent(html)}
+                        onChange={() => {}}
+                        isDark={isDark}
+                        readOnly={true}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -596,9 +639,9 @@ export default function Home() {
                   style={{ width: `${100 - leftWidth}%`, background: "var(--bg-2)" }}
                 >
                   <PaneLabel text="Live Preview" badge="GFM ✓" />
-                  <div className="flex-1 overflow-auto px-8 py-6">
+                  <div className="flex-1 overflow-auto px-4 py-8 sm:px-8 bg-[var(--bg-2)]">
                     <div
-                      className="md-preview max-w-2xl mx-auto"
+                      className="md-preview max-w-3xl mx-auto bg-[var(--bg)] shadow-[var(--shadow-out)] rounded-xl p-8 sm:p-12 min-h-[100%] border border-[var(--border-subtle)]"
                       dangerouslySetInnerHTML={{ __html: html }}
                     />
                   </div>
