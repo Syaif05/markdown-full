@@ -125,7 +125,7 @@ export default function Home() {
   const [showTableGen, setShowTableGen] = useState(false);
   const [showReadmeGen, setShowReadmeGen] = useState(false);
   const [leftWidth, setLeftWidth]       = useState(50);
-  const [copied, setCopied]             = useState<"" | "md" | "html">("");
+  const [copied, setCopied]             = useState<"" | "md" | "html" | "text">("");
   const [wysiwygKey, setWysiwygKey]     = useState(0); // for forced remount on import
   const [cheatSearch, setCheatSearch]   = useState("");
   const [isMobile, setIsMobile]         = useState(false);
@@ -281,8 +281,18 @@ export default function Home() {
   };
 
   // ── Copy ─────────────────────────────────────────────────────────────
-  const copy = (type: "md" | "html") => {
-    navigator.clipboard.writeText(type === "md" ? markdown : html);
+  const copy = (type: "md" | "html" | "text") => {
+    let content = "";
+    if (type === "md") {
+      content = markdown;
+    } else if (type === "html") {
+      content = html;
+    } else if (type === "text") {
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      content = temp.innerText || temp.textContent || "";
+    }
+    navigator.clipboard.writeText(content);
     setCopied(type);
     setTimeout(() => setCopied(""), 1800);
   };
@@ -506,6 +516,13 @@ export default function Home() {
           style={{ color: copied === "html" ? "var(--accent-teal)" : "var(--text-3)" }}
         >
           {copied === "html" ? "✓ Copied" : "Copy HTML"}
+        </button>
+        <button
+          onClick={() => copy("text")}
+          className="h-7 px-3 rounded-lg text-[11px] font-semibold transition-all duration-150 active:scale-95"
+          style={{ color: copied === "text" ? "var(--accent-teal)" : "var(--text-3)" }}
+        >
+          {copied === "text" ? "✓ Copied" : "Copy Text"}
         </button>
       </div>
 
