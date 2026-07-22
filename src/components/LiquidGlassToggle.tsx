@@ -80,9 +80,9 @@ export default function LiquidGlassToggle({ mode, setMode }: Props) {
             style={{
               left: isLeft ? 0 : "50%",
               width: "50%",
-              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-lav) 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-h) 100%)",
               transition: "left 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)",
-              boxShadow: "0 2px 12px rgba(120,121,241,0.40)",
+              boxShadow: "0 2px 12px rgba(37,99,235,0.40)",
             }}
           />
         </div>

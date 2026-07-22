@@ -56,7 +56,7 @@ function PaneLabel({ text, badge }: { text: string; badge?: string }) {
       {badge && (
         <span
           className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-          style={{ color: "var(--accent)", background: "rgba(120,121,241,0.10)" }}
+          style={{ color: "var(--accent)", background: "rgba(37,99,235,0.12)" }}
         >
           {badge}
         </span>
@@ -87,8 +87,8 @@ const CHEATSHEET = [
   { category: "Basic", name: "Heading 2",     syntax: "## Heading 2",                       color: "var(--accent)" },
   { category: "Basic", name: "Heading 3",     syntax: "### Heading 3",                      color: "var(--accent)" },
   { category: "Basic", name: "Bold",          syntax: "**bold text**",                      color: "var(--accent)" },
-  { category: "Basic", name: "Italic",        syntax: "*italic text*",                      color: "var(--accent-lav)" },
-  { category: "Basic", name: "Blockquote",    syntax: "> Blockquote",                       color: "var(--accent-peach)" },
+  { category: "Basic", name: "Italic",        syntax: "*italic text*",                      color: "var(--accent-orange)" },
+  { category: "Basic", name: "Blockquote",    syntax: "> Blockquote",                       color: "var(--accent-orange)" },
   { category: "Basic", name: "Bullet List",   syntax: "- Item 1\n- Item 2",                 color: "var(--accent)" },
   { category: "Basic", name: "Ordered List",  syntax: "1. First\n2. Second",                color: "var(--accent)" },
   { category: "Basic", name: "Horiz. Rule",   syntax: "---",                                color: "var(--text-3)" },
@@ -97,12 +97,12 @@ const CHEATSHEET = [
   { category: "Extended", name: "Table",         syntax: "| Col 1 | Col 2 |\n|---|---|\n| A | B |", color: "var(--accent)" },
   { category: "Extended", name: "Link",          syntax: "[Link Label](https://...)",       color: "var(--accent-teal)" },
   { category: "Extended", name: "Image",         syntax: "![Image Alt](url)",               color: "var(--accent-teal)" },
-  { category: "Code", name: "Inline Code",   syntax: "`console.log()`",                     color: "var(--accent-lav)" },
-  { category: "Code", name: "Code Block",    syntax: "```js\nfunction test() {\n  return 1;\n}\n```", color: "var(--accent-lav)" },
+  { category: "Code", name: "Inline Code",   syntax: "`console.log()`",                     color: "var(--accent-orange)" },
+  { category: "Code", name: "Code Block",    syntax: "```js\nfunction test() {\n  return 1;\n}\n```", color: "var(--accent-orange)" },
   { category: "Advanced", name: "Mermaid Diagram", syntax: "```mermaid\ngraph TD;\n  A-->B;\n```", color: "var(--accent-teal)" },
   { category: "Advanced", name: "Mermaid Sequence", syntax: "```mermaid\nsequenceDiagram\n  Alice->>Bob: Hello\n```", color: "var(--accent-teal)" },
-  { category: "Advanced", name: "Math Inline", syntax: "Einstein said $E=mc^2$", color: "var(--accent-peach)" },
-  { category: "Advanced", name: "Math Block", syntax: "$$\nx = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\n$$", color: "var(--accent-peach)" },
+  { category: "Advanced", name: "Math Inline", syntax: "Einstein said $E=mc^2$", color: "var(--accent-orange)" },
+  { category: "Advanced", name: "Math Block", syntax: "$$\nx = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\n$$", color: "var(--accent-orange)" },
   { category: "HTML", name: "Keyboard Key", syntax: "Press <kbd>Ctrl</kbd> + <kbd>C</kbd>", color: "var(--text-2)" },
   { category: "HTML", name: "Comment", syntax: "<!-- Hidden comment -->", color: "var(--text-3)" },
 ];
@@ -353,17 +353,18 @@ export default function Home() {
         {/* Logo */}
         <div className="flex items-center gap-3 mr-2 flex-shrink-0">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center font-display font-black text-white text-base select-none flex-shrink-0"
+            className="w-9 h-9 rounded-xl flex items-center justify-center font-display font-black text-white text-base select-none flex-shrink-0 transition-transform duration-200 hover:scale-105"
             style={{
-              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-lav) 100%)",
-              boxShadow: "var(--shadow-accent)",
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-h) 100%)",
+              boxShadow: "0 4px 14px rgba(37,99,235,0.35)",
             }}
           >
             M
           </div>
           <div className="hidden sm:block">
-            <div className="font-display font-extrabold text-[15px] tracking-tight leading-none" style={{ color: "var(--text-1)" }}>
+            <div className="flex items-center gap-1.5 font-display font-extrabold text-[15px] tracking-tight leading-none" style={{ color: "var(--text-1)" }}>
               GlassMark
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-orange)] text-white uppercase tracking-wider">v1.0</span>
             </div>
             <div className="text-[10px] font-semibold" style={{ color: "var(--text-3)" }}>
               Markdown Editor
@@ -705,7 +706,7 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-4 text-[11px]" style={{ color: "var(--text-3)" }}>
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--accent-teal)" }} />
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent-orange)", boxShadow: "0 0 8px var(--accent-orange)" }} />
             Live
           </span>
           <span>UTF-8</span>

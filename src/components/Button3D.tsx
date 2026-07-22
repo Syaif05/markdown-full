@@ -2,7 +2,7 @@ import React from "react";
 
 interface Button3DProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: "accent" | "secondary" | "ghost" | "danger";
+  variant?: "accent" | "secondary" | "ghost" | "danger" | "orange";
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
@@ -34,8 +34,14 @@ export default function Button3D({
     accent:
       "bg-[var(--accent)] text-white " +
       "shadow-[var(--shadow-accent)] " +
-      "hover:bg-[var(--accent-h)] hover:shadow-[5px_5px_14px_rgba(120,121,241,0.40),-3px_-3px_10px_var(--neu-light)] " +
+      "hover:bg-[var(--accent-h)] hover:shadow-[5px_5px_14px_rgba(37,99,235,0.40),-3px_-3px_10px_var(--neu-light)] " +
       "active:scale-[0.96] active:shadow-[var(--shadow-accent-in)]",
+
+    orange:
+      "bg-[var(--accent-orange)] text-white " +
+      "shadow-[4px_4px_12px_rgba(249,115,22,0.35)] " +
+      "hover:bg-[var(--accent-orange-h)] hover:shadow-[5px_5px_16px_rgba(249,115,22,0.45)] " +
+      "active:scale-[0.96] active:opacity-90",
 
     secondary:
       "text-[var(--text-1)] theme-transition " +
